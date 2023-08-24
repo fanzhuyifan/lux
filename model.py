@@ -1,6 +1,6 @@
 import pickle
 import os
-import copy
+from copy import copy
 from pathlib import Path
 
 class BrightnessModel():
@@ -119,14 +119,17 @@ class SimpleModel(BrightnessModel):
             return False
         with open(file, "rb") as f:
             self._observations = pickle.load(f)
-        self._lastSave = self._observations
+        self._i = 1 + max(
+           obs[-1] for obs in self._observations
+        )
+        self._lastSave = copy(self._observations)
         return True
     
     def save(self, file):
         super().save(file)
         with open(file, "wb") as f:
             pickle.dump(self._observations, f)
-        self._lastSave = self._observations
+        self._lastSave = copy(self._observations)
         
     
     def saveIfNecessary(self, file):
