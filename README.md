@@ -2,9 +2,7 @@
 A tool that automatically adjusts display brightness based on screen content on linux.
 ## Install
 ### Dependencies
-Python dependencies:
-- pyautogui
-- PIL
+See `requirements.txt` for python dependencies.
 
 Non-python dependencies:
 - scrot
