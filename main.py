@@ -47,14 +47,15 @@ def main():
         minB=args.min_brightness,
         maxB=args.max_brightness,
     )
+    brightnessGetter = brightness.ScreenBrightnessGetter()
 
-    lastScreen = brightness.getScreenBrightness()
+    lastScreen = brightnessGetter.get()
     lastBacklight = controller.get()
     brightnessModel.addObservation(lastScreen, lastBacklight)
     brightnessModel.load(args.file)
     while True:
         time.sleep(args.sleep_interval)
-        screen = brightness.getScreenBrightness()
+        screen = brightnessGetter.get()
         backlight = controller.get()
 
         if backlight != lastBacklight:

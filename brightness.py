@@ -1,5 +1,6 @@
-import pyautogui
+import pyscreeze
 from PIL import ImageStat
+import tempfile, os
 from runcmd import run_cmd
 
 class BrightnessController():
@@ -22,5 +23,11 @@ class Xbacklight(BrightnessController):
     def set(new_level, time):
         run_cmd(f"xbacklight -set {new_level} -time {int(time)}")
 
-def getScreenBrightness():
-    return ImageStat.Stat(pyautogui.screenshot().convert('L')).rms[0]
+class ScreenBrightnessGetter():
+    def __init__(self):
+        self._tempdir = tempfile.TemporaryDirectory()
+        self._tempfile = os.path.join(self._tempdir.name, "screenshot.png")
+    def get(self):
+        if os.path.exists(self._tempfile): 
+            os.remove(self._tempfile)
+        return ImageStat.Stat(pyscreeze.screenshot(self._tempfile).convert('L')).rms[0]
