@@ -90,19 +90,9 @@ class SimpleModel(BrightnessModel):
         except ValueError:
             pass
         if screenL is None:
-            screenL, backL, _ = min(
-                filter(
-                    lambda x: x[0] > screenR,
-                    self._observations,
-                ), 
-                key=lambda x: x[0])
-        elif screenR is None:
-            screenR, backR, _ = max(
-                filter(
-                    lambda x: x[0] < screenL,
-                    self._observations,
-                ), 
-                key=lambda x: x[0])
+            return backR
+        if screenR is None:
+            return backL
 
         # now we have screenL, screenR, backL, backR
         # we want to find the linear interpolation between backL and backR
