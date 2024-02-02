@@ -7,6 +7,7 @@ See `requirements.txt` for python dependencies.
 Non-python dependencies:
 - scrot
 - xbacklight (acpilight)
+- gnome (gnome-screenshot)
 
 ## Usage
 Run `python main.py` and adjust your screen brightness as you see fit.
