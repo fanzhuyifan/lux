@@ -75,6 +75,15 @@ class PyScreezeScreenBrightness(ScreenBrightnessGetter):
         return ImageStat.Stat(pyscreeze.screenshot(self._tempfile).convert('L')).rms[0]
 
 
+class AutoClosePipe2(object):
+    def __init__(self, flags):
+        self.r, self.w = os.pipe2(flags)
+    def __enter__(self):
+        return self.r, self.w
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.close(self.r)
+        os.close(self.w)
+
 class KWinScreenBrightness(ScreenBrightnessGetter):
     def __init__(self, screenName):
         self._screenName = screenName
@@ -99,42 +108,42 @@ class KWinScreenBrightness(ScreenBrightnessGetter):
         }
 
         # Create a temporary file to store the screenshot
-        r, w = os.pipe2(os.O_CLOEXEC)
-        os.set_blocking(r, True)
+        with AutoClosePipe2(os.O_CLOEXEC) as (r, w):
+            os.set_blocking(r, True)
 
-        # Create a Unix file descriptor for D-Bus
-        unix_fd = dbus.types.UnixFd(w)
+            # Create a Unix file descriptor for D-Bus
+            unix_fd = dbus.types.UnixFd(w)
 
-        # Call the CaptureScreen method
-        result = screenshot_method(self._screenName, options, unix_fd)
+            # Call the CaptureScreen method
+            result = screenshot_method(self._screenName, options, unix_fd)
 
-        # Process the result
-        image_type = result.get('type')
-        if image_type != 'raw':
-            raise ValueError(f"Unsupported image type: {image_type}")
+            # Process the result
+            image_type = result.get('type')
+            if image_type != 'raw':
+                raise ValueError(f"Unsupported image type: {image_type}")
 
-        width = result.get('width')
-        height = result.get('height')
-        stride = result.get('stride')
-        image_format = result.get('format')
-        screen = result.get('screen')
-        scale = result.get('scale')
+            width = result.get('width')
+            height = result.get('height')
+            stride = result.get('stride')
+            image_format = result.get('format')
+            screen = result.get('screen')
+            scale = result.get('scale')
 
-        raw_data = bytearray()
-        totalBytes = width * height * 4
-        while len(raw_data) < totalBytes:
-            raw_data += os.read(r, totalBytes - len(raw_data))
+            raw_data = bytearray()
+            totalBytes = width * height * 4
+            while len(raw_data) < totalBytes:
+                raw_data += os.read(r, totalBytes - len(raw_data))
 
-        if image_format == 5:  # QImage::Format_ARGB32
-            mode = 'RGBA'
-            arg = 'BGRA'
-        else:
-            raise ValueError(f"Unsupported image format: {image_format}")
+            if image_format == 5:  # QImage::Format_ARGB32
+                mode = 'RGBA'
+                arg = 'BGRA'
+            else:
+                raise ValueError(f"Unsupported image format: {image_format}")
 
-        image = PIL.Image.frombytes(
-            mode, (width, height), raw_data, 'raw', arg)
+            image = PIL.Image.frombytes(
+                mode, (width, height), raw_data, 'raw', arg)
 
-        return ImageStat.Stat(image.convert('L')).rms[0]
+            return ImageStat.Stat(image.convert('L')).rms[0]
 
 
 def getScreens():
