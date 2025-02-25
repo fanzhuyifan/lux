@@ -33,33 +33,27 @@ class BrightnessModel():
         return round(max(self.minB, min(self.maxB, brightness)))
 
 class SimpleModel(BrightnessModel):
-    def __init__(self, minB, maxB, maxObs=10):
+    def __init__(self, minB, maxB, threshhold=10):
         super().__init__(minB, maxB)
         self._observations = []
         self._lastSave = None
-        self._i = 0
-        assert(maxObs > 0)
-        self.maxObs = maxObs
+        self.threshold = threshhold
 
     def addObservation(self, screen, backlight):
         self._observations = self.filterInconsistent(screen, backlight, self._observations)
-        if len(self._observations) == self.maxObs:
-            # remove item with smallest _i
-            iSmallest = min(
-                self._observations, 
-                key=lambda x: x[-1]
-            )[-1]
-            self._observations = [
-                obs for obs in self._observations
-                if obs[-1] > iSmallest
-            ]
-        self._observations.append((screen, backlight, self._i))
-        self._i += 1
+        self._observations = self.removeCloseObservations(screen, self._observations, self.threshold)
+        self._observations.append((screen, backlight))
     
+    @staticmethod
+    def removeCloseObservations(screen, observations, threshold):
+        return [
+            (s, b) for s, b in observations
+            if abs(s - screen) > threshold
+        ]
     @staticmethod
     def filterInconsistent(screen, backlight, observations):
         return [
-            (s, b, i) for s, b, i in observations
+            (s, b) for s, b in observations
             if (s > screen and b < backlight) or (s < screen and b > backlight)
         ]
 
@@ -72,7 +66,7 @@ class SimpleModel(BrightnessModel):
         # and backL and backR are the corresponding backlights
         screenL = screenR = backL = backR = None
         try:
-            screenL, backL, _ = max(
+            screenL, backL = max(
                 filter(
                     lambda x: x[0] <= screen,
                     self._observations,
@@ -81,7 +75,7 @@ class SimpleModel(BrightnessModel):
         except ValueError:
             pass
         try:
-            screenR, backR, _ = min(
+            screenR, backR = min(
                 filter(
                     lambda x: x[0] >= screen,
                     self._observations,
